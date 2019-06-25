@@ -1169,6 +1169,45 @@ int main(int argc, char *argv[]) {
 	fwrite(mainbuf, 1024, 4*1024, fp);
 	fclose(fp);
 #endif
+#if 0
+    // quick hack to invert audio volumes and see if that makes acceptable (loud!) audio...
+    // it doesn't seem to be any better
+    FILE *fp=fopen("D:\\work\\ti\\dragonslair\\code\\rawAttractVideo8.bin", "rb");
+    int sz = fread(mainbuf, 1, sizeof(mainbuf), fp);
+    fclose(fp);
+	// Go through and mute the audio. For some reason using dumpad above
+	// as a template did not work!
+    bool seen[16];
+    memset(seen,0,sizeof(seen));
+	int pos = 0;
+	while (pos < sz) {
+		int x = 32;
+		while (x < 8192) {
+            seen[mainbuf[pos+x]&0x0f]=true;
+			mainbuf[pos+x]=(mainbuf[pos+x]&0xf0)+(0x0f-(mainbuf[pos+x]&0x0f));
+			++x;
+			if (x>=8192) break;
+			for (int idx=0; idx<192; idx++) {
+				x+=4;
+				if (x>=8192) break;
+                seen[mainbuf[pos+x]&0x0f]=true;
+				mainbuf[pos+x]=(mainbuf[pos+x]&0xf0)+(0x0f-(mainbuf[pos+x]&0x0f));
+				++x;
+				if (x>=8192) break;
+			}
+			if (x>=8192) break;
+		}
+		pos+=8192;
+	}
+    fp=fopen("D:\\work\\ti\\dragonslair\\code\\rawAttractVideoLoud8.bin", "wb");
+    fwrite(mainbuf, 1, sz, fp);
+    fclose(fp);
+    for (int idx=0; idx<16; ++idx) {
+        if (!seen[idx]) printf("Did not seen volume value %d\n", idx);
+    }
+#endif
+
+
 
 	// repack a video pack file on 8k boundaries for a bank switched cart
 	// Also injects the 'cartheader.bin' bytes at the start.
